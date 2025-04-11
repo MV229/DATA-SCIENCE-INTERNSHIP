@@ -1,0 +1,26 @@
+# Optimization Model using PuLP
+
+import pulp
+
+# 1. Define the problem
+model = pulp.LpProblem("Product_Mix_Optimization", pulp.LpMaximize)
+
+# 2. Define decision variables
+A = pulp.LpVariable('Product_A', lowBound=0, cat='Continuous')
+B = pulp.LpVariable('Product_B', lowBound=0, cat='Continuous')
+
+# 3. Define the objective function (maximize profit)
+model += 20 * A + 30 * B, "Total Profit"
+
+# 4. Define constraints
+model += 2 * A + 1 * B <= 40, "Machine Time"
+model += 1 * A + 2 * B <= 30, "Labor Time"
+
+# 5. Solve the problem
+model.solve()
+
+# 6. Print the results
+print("Status:", pulp.LpStatus[model.status])
+print(f"Optimal number of Product A: {A.varValue}")
+print(f"Optimal number of Product B: {B.varValue}")
+print(f"Total Profit: ${pulp.value(model.objective)}")
