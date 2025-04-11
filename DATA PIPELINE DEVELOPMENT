@@ -1,0 +1,53 @@
+# etl_pipeline.py
+
+import pandas as pd
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
+from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import Pipeline
+from sklearn.impute import SimpleImputer
+
+# 1. EXTRACT - Load the raw data
+data = pd.read_csv('raw_data.csv')  # Replace with actual path
+
+# 2. TRANSFORM - Data Preprocessing
+
+# Define numeric and categorical columns
+numeric_features = ['age', 'income']
+categorical_features = ['gender', 'city']
+
+# Preprocessing for numeric features
+numeric_transformer = Pipeline(steps=[
+    ('imputer', SimpleImputer(strategy='mean')),
+    ('scaler', StandardScaler())
+])
+
+# Preprocessing for categorical features
+categorical_transformer = Pipeline(steps=[
+    ('imputer', SimpleImputer(strategy='most_frequent')),
+    ('encoder', OneHotEncoder(handle_unknown='ignore'))
+])
+
+# Combine into one column transformer
+preprocessor = ColumnTransformer(transformers=[
+    ('num', numeric_transformer, numeric_features),
+    ('cat', categorical_transformer, categorical_features)
+])
+
+# Apply transformation
+pipeline = Pipeline(steps=[
+    ('preprocessor', preprocessor)
+])
+
+# Fit and transform the data
+processed_data = pipeline.fit_transform(data)
+
+# Convert the processed data to a DataFrame
+# (Get feature names after transformation)
+cat_columns = pipeline.named_steps['preprocessor'].named_transformers_['cat'].named_steps['encoder'].get_feature_names_out(categorical_features)
+final_columns = numeric_features + list(cat_columns)
+processed_df = pd.DataFrame(processed_data.toarray(), columns=final_columns)
+
+# 3. LOAD - Save to CSV
+processed_df.to_csv('cleaned_data.csv', index=False)
+
+print("ETL process complete. Processed data saved to 'cleaned_data.csv'.")
