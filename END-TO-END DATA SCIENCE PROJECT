@@ -1,0 +1,75 @@
+# iris_model_trainer.py
+
+import pandas as pd
+from sklearn.datasets import load_iris
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestClassifier
+import joblib
+
+# Load dataset
+iris = load_iris()
+df = pd.DataFrame(iris.data, columns=iris.feature_names)
+df['target'] = iris.target
+
+# Prepare data
+X = df.drop('target', axis=1)
+y = df['target']
+
+# Split
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Train model
+model = RandomForestClassifier()
+model.fit(X_train, y_train)
+
+# Save model
+joblib.dump(model, 'iris_model.pkl')
+print("Model trained and saved as 'iris_model.pkl'")
+
+
+# app.py
+
+from flask import Flask, request, render_template
+import joblib
+import numpy as np
+
+app = Flask(__name__)
+model = joblib.load('iris_model.pkl')
+
+@app.route('/')
+def home():
+    return render_template('index.html')
+
+@app.route('/predict', methods=['POST'])
+def predict():
+    try:
+        features = [float(x) for x in request.form.values()]
+        prediction = model.predict([features])[0]
+        class_names = ['Setosa', 'Versicolor', 'Virginica']
+        return render_template('index.html', prediction_text=f'Predicted Iris Class: {class_names[prediction]}')
+    except Exception as e:
+        return render_template('index.html', prediction_text=f'Error: {e}')
+
+if __name__ == "__main__":
+    app.run(debug=True)
+
+
+<!-- templates/index.html -->
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Iris Flower Predictor</title>
+</head>
+<body>
+    <h2>Enter Iris Flower Features</h2>
+    <form action="/predict" method="post">
+        Sepal Length: <input type="text" name="sepal length (cm)"><br><br>
+        Sepal Width: <input type="text" name="sepal width (cm)"><br><br>
+        Petal Length: <input type="text" name="petal length (cm)"><br><br>
+        Petal Width: <input type="text" name="petal width (cm)"><br><br>
+        <input type="submit" value="Predict">
+    </form>
+    <h3>{{ prediction_text }}</h3>
+</body>
+</html>
